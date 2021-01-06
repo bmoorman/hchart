@@ -7,6 +7,12 @@
 <script>
 import {Chart} from 'highcharts-vue'
 
+const {InfluxDB} = require('@influxdata/influxdb-client');
+// You can generate a Token from the "Tokens Tab" in the influx UI
+const token = 'YH3pdsrBrb071Q2DY_D04JjWt9e-B_3ONet3QN9MfIkADwh2MhKIPeCTk0XyvVmRDh_j6F4o9IhWgipKUAAMwA==';
+const client = new InfluxDB({url: 'http://13.79.192.127:8086', token: token});
+const queryApi = client.getQueryApi('test');
+
 export default {
   name: 'HChart',
   components: {
@@ -17,6 +23,8 @@ export default {
   },
   data () {
     return {
+      data: {},
+      variables: [],
       chartOptions: {
         chart: {
           type: "line",
@@ -32,21 +40,35 @@ export default {
     }
   },
   mounted() {
-    this.init();
-    
+    this.init();    
   },
   methods: {
     init() {
+      // get variables from the database schema
+      this.getDbVariables();
       // get rows from database which will set the data in chart if succesful
        this.getDbRows();
     },
+    getDbVariables() {
+      let _this = this;
+      const query = "import \"influxdata/influxdb/schema\" schema.measurementFieldKeys( bucket: \"test\",  measurement: \"variables\",  start: -1y)";
+      var fields = [];
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          fields.push(o);
+        },
+        error(error) {
+          console.error(error);
+          console.log('\\nFinished ERROR');
+        },
+        complete() {
+          _this.variables = fields.filter(v => v._value != "day").map(v => v._value);
+        },
+      });
+    },
     getDbRows() {
       let _this = this;
-      const {InfluxDB} = require('@influxdata/influxdb-client');
-      // You can generate a Token from the "Tokens Tab" in the influx UI
-      const token = 'YH3pdsrBrb071Q2DY_D04JjWt9e-B_3ONet3QN9MfIkADwh2MhKIPeCTk0XyvVmRDh_j6F4o9IhWgipKUAAMwA==';
-      const client = new InfluxDB({url: 'http://13.79.192.127:8086', token: token});
-      const queryApi = client.getQueryApi('test');
       const query = "from(bucket: \"house\") |> range(start: -1y) |> filter(fn: (r) => r[\"_measurement\"] == \"variables\") |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") |> group(columns: [\"startdate\"], mode: \"by\")";
       var rows = [];
       queryApi.queryRows(query, {
@@ -59,37 +81,39 @@ export default {
           console.log('\\nFinished ERROR');
         },
         complete() {
-          _this.setChartData(rows);
+          _this.setChartData(rows, _this);
+          _this.setSeries(_this, 2);
         },
       });
     },
-    setChartData(rows) {
-      var data = {}
+    setChartData(rows, _this) {
       rows.forEach(function(r) {
         var startdateLabel = r.startdate;
         var dayLabel = r.day;
-        if (!(startdateLabel in data)) {
-          data[startdateLabel] = {};
+        if (!(startdateLabel in _this.data)) {
+          _this.data[startdateLabel] = {};
         }        
-        if (!(dayLabel in data[startdateLabel])) {
-          data[startdateLabel][dayLabel] = {};
+        if (!(dayLabel in _this.data[startdateLabel])) {
+          _this.data[startdateLabel][dayLabel] = {};
         }        
-        data[startdateLabel][dayLabel] = r;
+        _this.data[startdateLabel][dayLabel] = r;
       });
-      console.log(data);
-      Object.keys(data).forEach( (startDate) => {
+      console.log(_this.data);
+    },
+    setSeries(_this, varIndex) {
+      Object.keys(this.data).forEach( (startDate) => {
         var series = {
           name: startDate,
           data: []
         };
-        Object.keys(data[startDate]).forEach( (day) => {
+        Object.keys(_this.data[startDate]).forEach( (day) => {
           var dayNbr = Number(day);
-          var value = data[startDate][dayNbr].mass;
+          var value = _this.data[startDate][dayNbr][_this.variables[varIndex]];
           series.data.push([dayNbr, value]);
         });
-        this.chartOptions.series.push(series);
+        _this.chartOptions.series.push(series);
       });
-    },
+    }
   }
 }
 
