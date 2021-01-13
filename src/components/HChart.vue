@@ -1,11 +1,14 @@
 <template>
-  <div class="chartContainer">
-    <highcharts class="chart" :options="chartOptions"></highcharts>
+  <div class="chartContainer" :style="{ width: percent }">
+
+    <sidebar-vue :showSidebar="isSidebarOpen" :variables="variables" v-on:sidebar-toggled="updateSidebar"  />
+    <highcharts ref="hc" class="chart" :options="chartOptions"></highcharts>
   </div>
 </template>
 
 <script>
 import {Chart} from 'highcharts-vue'
+import SidebarVue from './SidebarVue.vue';
 
 const {InfluxDB} = require('@influxdata/influxdb-client');
 // You can generate a Token from the "Tokens Tab" in the influx UI
@@ -16,18 +19,19 @@ const queryApi = client.getQueryApi('test');
 export default {
   name: 'HChart',
   components: {
-    highcharts: Chart 
-  },
-  props: {
-    msg: String
+    highcharts: Chart,
+    SidebarVue,
   },
   data () {
     return {
+      percent: '100%',
+      isSidebarOpen: false,
       data: {},
       variables: [],
       chartOptions: {
         chart: {
           type: "line",
+          zoomType: 'x'
         },
         title: {
           text: "Animal House KPI"
@@ -43,6 +47,18 @@ export default {
     this.init();    
   },
   methods: {
+    updateSidebar (sidebarState)
+    {
+      this.isSidebarOpen = sidebarState
+      this.setPercent( ( sidebarState ? 83 : 100 ))
+    },
+    setPercent(value)
+    {
+      this.percent = value + '%'
+      this.$nextTick(() => {
+        this.$refs.hc.chart.reflow()
+      })
+    },
     init() {
       // get variables from the database schema
       this.getDbVariables();
@@ -123,20 +139,26 @@ export default {
 <style scoped>
 .chartContainer {
     position: fixed;
-    width: 100%;
     height: 100%;
     top: 0;
     left: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background-color:#333;
 }
 .chart {
-    height: 95%;
-    width: 95%;
+    height: 100%;
+    width: 100%;
     margin: 0 auto;
     max-width: none;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+.settingsBtn {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 2 
 }
 </style>
