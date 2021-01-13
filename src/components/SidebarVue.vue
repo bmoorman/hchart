@@ -44,7 +44,7 @@ data() {
         this.$emit('sidebar-toggled', val)
       }
     }
-  }
+  },
 };
 
 </script>

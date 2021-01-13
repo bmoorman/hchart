@@ -98,7 +98,7 @@ export default {
         },
         complete() {
           _this.setChartData(rows, _this);
-          _this.setSeries(_this, 2);
+          _this.setSeries(_this, _this.$store.state.vars);
         },
       });
     },
@@ -116,19 +116,39 @@ export default {
       });
       console.log(_this.data);
     },
-    setSeries(_this, varIndex) {
+    setSeries(_this, vars) {
+      let i = 0;
       Object.keys(this.data).forEach( (startDate) => {
         var series = {
           name: startDate,
+          id: i.toString(),
           data: []
         };
         Object.keys(_this.data[startDate]).forEach( (day) => {
           var dayNbr = Number(day);
-          var value = _this.data[startDate][dayNbr][_this.variables[varIndex]];
+          var value = _this.data[startDate][dayNbr][_this.variables[vars[0]]];
           series.data.push([dayNbr, value]);
         });
         _this.chartOptions.series.push(series);
+        i++;
       });
+      if (vars.length > 1) {
+        let parentId = 0;
+        // add second var series linked to first var series
+        Object.keys(this.data).forEach( (startDate) => {
+          var series = {
+            linkedTo: parentId.toString(),
+            data: []
+          };
+          Object.keys(_this.data[startDate]).forEach( (day) => {
+            var dayNbr = Number(day);
+            var value = _this.data[startDate][dayNbr][_this.variables[vars[1]]];
+            series.data.push([dayNbr, value]);
+          });
+          _this.chartOptions.series.push(series);
+          parentId++;
+        });
+      }
     }
   }
 }
