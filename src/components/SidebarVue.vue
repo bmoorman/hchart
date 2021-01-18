@@ -4,15 +4,20 @@
     <b-sidebar v-model="isSidebarToggled" right shadow title="">
       <div class="px-3 py-2">
         <p>Select your variables</p>
+
+        {{ computedSelectedItems }}
+
          <b-form-checkbox
             v-for="item in variables"
-            :key="item"
-            v-model="selectedItems"
+            :key="item.id"
+            v-model="computedSelectedItems"
             name="checkbox-1"
             :value="item"
-            :disabled="selectedItems.length == 2 && !selectedItems.includes(item)"
+            :disabled="computedSelectedItems.length == 2 && !computedSelectedItems.includes(item)"
+            return-object
+            onClick="save()"
         >
-         {{ item }}
+         {{ item.name }}
         </b-form-checkbox>
 
       </div>
@@ -26,16 +31,19 @@
 import { BSidebar, BButton, BFormCheckbox } from 'bootstrap-vue'
 
 export default {
-    props: [ 'variables', 'showSidebar' ],
+    props: [ 'variables', 'showSidebar', 'selectedItems' ],
     components: {
   BButton, BSidebar, BFormCheckbox
 },
-data() {
-    return{
-      selectedItems: [],
-    }
-  },
   computed: {
+    computedSelectedItems: {
+        get () {
+            return this.selectedItems
+        },
+        set (val) {
+            this.$emit('update:selectedItems', val)
+        }
+    },
     isSidebarToggled: {
       get () {
         return this.showSidebar // TRUE / FALSE
@@ -46,5 +54,4 @@ data() {
     }
   }
 };
-
 </script>

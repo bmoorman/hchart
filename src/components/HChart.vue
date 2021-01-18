@@ -1,7 +1,8 @@
 <template>
+  
   <div class="chartContainer" :style="{ width: percent }">
 
-    <sidebar-vue :showSidebar="isSidebarOpen" :variables="variables" v-on:sidebar-toggled="updateSidebar"  />
+    <sidebar-vue :showSidebar="isSidebarOpen" :variables="newVariables" v-on:sidebar-toggled="updateSidebar" :selectedItems.sync="selectedChartOptions" />
     <highcharts ref="hc" class="chart" :options="chartOptions"></highcharts>
   </div>
 </template>
@@ -26,7 +27,9 @@ export default {
     return {
       percent: '100%',
       isSidebarOpen: false,
+      selectedChartOptions: [ ],
       data: {},
+      newVariables: [],
       variables: [],
       chartOptions: {
         chart: {
@@ -45,6 +48,39 @@ export default {
   },
   mounted() {
     this.init();    
+  },
+  watch: {
+    selectedChartOptions (theArray) { //A method is a function which is a property of an object. in this case it is selectedChartOption.
+      let _this = this
+
+      this.chartOptions.series = []
+      let newYAxis = []
+
+     // _this.chartOptions.series = []
+      //_this.chartOptions.yAxis = []
+
+      theArray.forEach((item, index) => {//for each element in the iterable (could be an array, collectable etc.)”.
+      //      this.chartOptions.series = []
+        _this.setSeries(_this, item.id)  // The object type must match the element type of the iterable . The iterable protocol allows JavaScript objects to define or customize their iteration behavior, such as what values are looped over in a for...of construct.
+        newYAxis.push({
+          title: {
+            text: item.name
+          },
+          opposite: index
+        })
+      })
+
+      this.chartOptions.yAxis = newYAxis
+
+/*
+      newYAxis.push({
+                    title: {
+                        text: 'oops'//this.$options.filters.capitalize(this.inputs[i])
+                    },
+                    opposite: i == 1
+                })
+                */
+    }
   },
   methods: {
     updateSidebar (sidebarState)
@@ -79,7 +115,8 @@ export default {
           console.log('\\nFinished ERROR');
         },
         complete() {
-          _this.variables = fields.filter(v => v._value != "day").map(v => v._value);
+          _this.variables = fields.filter(v => v._value != "day").map(v => v._value); // Does Table Reference Value Order??? index == 0 (first item) A fields filter specifies properties (fields) to include or exclude from the results. .map makes a new array that includes the variables for the function called on
+          _this.newVariables = fields.filter(v => v._value != "day").map((v, index) =>  ({ id: index, name: v._value }) ) //
         },
       });
     },
@@ -98,7 +135,8 @@ export default {
         },
         complete() {
           _this.setChartData(rows, _this);
-          _this.setSeries(_this, 2);
+          //_this.setSeries(_this, 0);
+          //_this.selectedChartOptions.push({ id: 0, name: 'co2' })
         },
       });
     },
@@ -132,6 +170,12 @@ export default {
     }
   }
 }
+
+
+// [ 0 ]
+// StartDate (have all of 0 start dates...) push to SEries [ name: {1/2020}, data: [], name: {2/2020}, data: [] ]
+
+// Change and updated... [ 0, 1 ].... [ name: {1/2020}, data: [], name: {2/2020}, data: [], name: {1/2020}, data: [], name: {2/2020}, data: [] ]
 
 </script>
 
