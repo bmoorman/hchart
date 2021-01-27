@@ -138,14 +138,15 @@ export default {
     setSeries(_this, vars) {
       vars.forEach((item,index) => {
       _this.chartOptions.yAxis[index].title.text = _this.variables[item];
+      _this.chartOptions.yAxis[index].lineWidth = 3;
       });
       if (vars.length < 2) {
         _this.chartOptions.yAxis[1].title.text=''
-        //_this.chartoptions.yAxis[1].lineWidth=0
+        _this.chartOptions.yAxis[1].lineWidth = 0;
       }
       if (vars.length < 1) {
         _this.chartOptions.yAxis[0].title.text=''
-        //_this.chartoptions.yAxis[0].lineWidth=0
+        _this.chartOptions.yAxis[0].lineWidth=0
         }
       _this.chartOptions.series = [];
       let i = 0;
