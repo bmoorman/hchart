@@ -22,6 +22,7 @@ export default {
     highcharts: Chart,
     SidebarVue,
   },
+  
   data () {
     return {
       percent: '100%',
@@ -40,7 +41,24 @@ export default {
           text: "by Production Start Date"
         },
         series: [],
-      }
+        xAxis: [{
+          lineWidth: 3,
+        }],
+        yAxis: [{ // Primary yAxis
+          title: {
+            text: '',
+          },
+          lineWidth: 3,
+        }, 
+        { // Secondary yAxis
+          title: {
+            text: '',
+          },
+          lineWidth: 3,
+          opposite: true,
+        }
+        ]
+      }    
     }
   },
   mounted() {
@@ -50,8 +68,9 @@ export default {
     updateSidebar (sidebarState)
     {
       this.isSidebarOpen = sidebarState
-      this.setPercent( ( sidebarState ? 83 : 100 ))
+      this.setPercent( ( sidebarState ? 78.8 : 100 ))
     },
+    
     setPercent(value)
     {
       this.percent = value + '%'
@@ -117,12 +136,26 @@ export default {
       console.log(_this.data);
     },
     setSeries(_this, vars) {
+      vars.forEach((item,index) => {
+      _this.chartOptions.yAxis[index].title.text = _this.variables[item];
+      });
+      if (vars.length < 2) {
+        _this.chartOptions.yAxis[1].title.text=''
+        //_this.chartoptions.yAxis[1].lineWidth=0
+      }
+      if (vars.length < 1) {
+        _this.chartOptions.yAxis[0].title.text=''
+        //_this.chartoptions.yAxis[0].lineWidth=0
+        }
+      _this.chartOptions.series = [];
       let i = 0;
       Object.keys(this.data).forEach( (startDate) => {
         var series = {
           name: startDate,
           id: i.toString(),
-          data: []
+          data: [],
+          yAxis: 0,
+
         };
         Object.keys(_this.data[startDate]).forEach( (day) => {
           var dayNbr = Number(day);
@@ -138,7 +171,9 @@ export default {
         Object.keys(this.data).forEach( (startDate) => {
           var series = {
             linkedTo: parentId.toString(),
-            data: []
+            data: [],
+            yAxis:1,
+
           };
           Object.keys(_this.data[startDate]).forEach( (day) => {
             var dayNbr = Number(day);
@@ -150,7 +185,12 @@ export default {
         });
       }
     }
+  },
+    watch: {
+  '$store.state.vars'(newVars) {
+    this.setSeries(this, newVars)
   }
+},
 }
 
 </script>
